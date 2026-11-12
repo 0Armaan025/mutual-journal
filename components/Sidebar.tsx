@@ -9,6 +9,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import JournalContextMenu, { type JournalMenuPos } from "./JournalContextMenu";
 import { useDeleteJournal } from "./useDeleteJournal";
 import Icon from "./Icons";
+import LayoutPanel from "./LayoutPanel";
 
 const ACCENT_HEX: Record<Accent, string> = {
   amber: "#e8913a",
@@ -166,6 +167,10 @@ export default function Sidebar({
               />
             ))}
           </div>
+        </div>
+        <div className="row">
+          <span className="lbl">Layout</span>
+          <LayoutPanel trigger="gear" />
         </div>
       </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getJournals } from "@/lib/storage";
+import { loadPrefs, savePrefs, applyPrefs } from "@/lib/prefs";
 import { useTheme } from "./ThemeProvider";
 
 type Item = { label: string; hint?: string; run: () => void };
@@ -28,6 +29,13 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       onClose();
       router.push(path);
     };
+    const setLayout = (patch: Record<string, string>) => () => {
+      const merged = { ...loadPrefs(), ...patch };
+      savePrefs(merged);
+      applyPrefs(merged);
+      window.dispatchEvent(new Event("mj:layout-change"));
+      onClose();
+    };
     const list: Item[] = journals
       .filter((j) => !q || j.title.toLowerCase().includes(q.toLowerCase()))
       .map((j) => ({ label: j.title, hint: "journal", run: go(`/journal/${j.shareId}`) }));
@@ -35,6 +43,18 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       list.unshift({ label: `Search “${q}”`, hint: "search", run: go(`/search?q=${encodeURIComponent(q)}`) });
     }
     list.unshift({ label: "Dashboard", hint: "home", run: go("/") });
+    if (!q || "layout width sidebar content reading".includes(q.toLowerCase())) {
+      list.unshift({ label: "Layout options…", hint: "panel", run: () => {
+        const trigger = document.querySelector<HTMLButtonElement>('[aria-label="Layout options"]');
+        trigger?.click();
+        onClose();
+      } });
+      list.unshift({ label: "Toggle sidebar", hint: "⌘B", run: setLayout({ sidebar: loadPrefs().sidebar === "open" ? "closed" : "open" }) });
+      list.unshift({ label: "Wide content", hint: "layout", run: setLayout({ width: "wide" }) });
+      list.unshift({ label: "Comfortable content", hint: "layout", run: setLayout({ width: "comfortable" }) });
+      list.unshift({ label: "Documents as cards", hint: "layout", run: setLayout({ docsLayout: "grid" }) });
+      list.unshift({ label: "Documents as tabs", hint: "layout", run: setLayout({ docsLayout: "strip" }) });
+    }
     if (!q || "new journal".includes(q.toLowerCase())) {
       list.unshift({ label: "New journal", hint: "create", run: go("/") });
     }

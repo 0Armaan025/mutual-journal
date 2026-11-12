@@ -7,6 +7,7 @@ import Markdown from "@/components/Markdown";
 import { MOOD_DEFS, moodDef } from "@/lib/moods";
 import IconButton from "@/components/IconButton";
 import Icon from "@/components/Icons";
+import { loadPrefs } from "@/lib/prefs";
 import { QUICK_REACTIONS, initials, timeAgo, wordCount, findWikilinks, extractTags } from "@/lib/format";
 import { FormatToolbar, SlashMenu, caretCoords, type FormatKey, type SlashAction } from "./EditorTools";
 import { DocOutline, DocHistory } from "./DocPanels";
@@ -108,6 +109,16 @@ export default function DocumentsTab({
   );
 
   const [creating, setCreating] = useState(false);
+  const [docsLayout, setDocsLayout] = useState<"strip" | "grid">("strip");
+
+  useEffect(() => {
+    function onLayout() {
+      setDocsLayout(loadPrefs().docsLayout);
+    }
+    onLayout();
+    window.addEventListener("mj:layout-change", onLayout);
+    return () => window.removeEventListener("mj:layout-change", onLayout);
+  }, []);
 
   useEffect(() => {
     function onHash() {
@@ -168,46 +179,71 @@ export default function DocumentsTab({
 
   return (
     <>
-      <nav className="doctabs">
-        {docs.map((d) => (
-          <button
-            key={d.id}
-            className={`doctab${d.id === doc?.id ? " on" : ""}`}
-            onClick={() => onSelect(d.id)}
-            title={d.title}
-          >
-            {d.pinned && <Icon name="star" size={11} />}
-            <span className="dt">{d.title || "Untitled"}</span>
-            <span
-              className="dx"
-              role="button"
-              title="Delete document"
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (!window.confirm(`Delete "${d.title || "Untitled"}"? This can't be undone.`)) return;
-                if (d.createdBy && d.createdBy !== username) {
-                  toast("Only the creator can delete this document", true);
-                  return;
-                }
-                const res = await fetch(
-                  `/api/journals/${journal.shareId}/docs/${d.id}?author=${encodeURIComponent(username)}`,
-                  { method: "DELETE" }
-                );
-                if (!res.ok) {
-                  const data = await res.json().catch(() => ({}));
-                  toast(data.error || "Could not delete", true);
-                  return;
-                }
-                pickReplacement(d.id);
-                router.refresh();
-              }}
+      {docsLayout === "strip" ? (
+        <nav className="doctabs">
+          {docs.map((d) => (
+            <button
+              key={d.id}
+              className={`doctab${d.id === doc?.id ? " on" : ""}`}
+              onClick={() => onSelect(d.id)}
+              title={d.title}
             >
-              ×
-            </span>
+              {d.pinned && <Icon name="star" size={11} />}
+              <span className="dt">{d.title || "Untitled"}</span>
+              <span
+                className="dx"
+                role="button"
+                title="Delete document"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!window.confirm(`Delete "${d.title || "Untitled"}"? This can't be undone.`)) return;
+                  if (d.createdBy && d.createdBy !== username) {
+                    toast("Only the creator can delete this document", true);
+                    return;
+                  }
+                  const res = await fetch(
+                    `/api/journals/${journal.shareId}/docs/${d.id}?author=${encodeURIComponent(username)}`,
+                    { method: "DELETE" }
+                  );
+                  if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    toast(data.error || "Could not delete", true);
+                    return;
+                  }
+                  pickReplacement(d.id);
+                  router.refresh();
+                }}
+              >
+                ×
+              </span>
+            </button>
+          ))}
+          <TemplateMenu creating={creating} onCreate={createDoc} />
+        </nav>
+      ) : (
+        <div className="docs-grid">
+          {docs.map((d) => (
+            <button
+              key={d.id}
+              className={`doc-card${d.id === doc?.id ? " on" : ""}`}
+              onClick={() => onSelect(d.id)}
+              title={d.title}
+            >
+              <span className="dc-t">{d.pinned && <Icon name="star" size={11} />} {d.title || "Untitled"}</span>
+              <span className="dc-s">{d.content.replace(/[#*>`|\-[\](\[{})]/g, "").slice(0, 110) || "empty document"}</span>
+              <span className="dc-m">
+                <span className="avatar" style={{ width: 16, height: 16, fontSize: 9 }}>{(d.updatedBy || d.createdBy || "?").slice(0, 1).toUpperCase()}</span>
+                {d.updatedBy || d.createdBy || "someone"} · {timeAgo(d.updatedAt)}
+                {d.pinned && <span style={{ marginLeft: "auto", color: "var(--accent)" }}><Icon name="star" size={11} /></span>}
+              </span>
+            </button>
+          ))}
+          <button className="doc-card" onClick={() => createDoc("blank")} disabled={creating} style={{ alignItems: "center", justifyContent: "center", color: "var(--text-faint)", borderStyle: "dashed", minHeight: 92 }}>
+            <Icon name="plus" size={16} />
+            <span style={{ fontSize: 12.5 }}>New document</span>
           </button>
-        ))}
-        <TemplateMenu creating={creating} onCreate={createDoc} />
-      </nav>
+        </div>
+      )}
 
       {doc ? (
         <DocEditor journal={journal} doc={doc} username={username} onDeleted={(nextId) => onSelect(nextId)} />

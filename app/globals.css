@@ -594,6 +594,75 @@ textarea:focus, input:focus { outline: none; }
 .modal p { font-size: 13.5px; color: var(--text-dim); line-height: 1.55; margin: 8px 0 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
+/* ============ layout preferences ============ */
+
+/* sidebar hidden */
+[data-sidebar="closed"] .sidebar { display: none; }
+[data-sidebar="closed"] .topbar .brand { display: inline-flex; }
+
+.sidebar-expand {
+  position: fixed; left: 12px; top: 12px; z-index: 25;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.sidebar-expand:hover { color: var(--text); border-color: var(--border-strong); }
+
+/* content width */
+[data-width="comfortable"] .page { max-width: 780px; }
+[data-width="wide"] .page { max-width: 980px; }
+[data-width="full"] .page { max-width: 100%; padding-left: 40px; padding-right: 40px; }
+
+/* reading size */
+[data-fontsize="sm"] .md p { font-size: 14px; }
+[data-fontsize="md"] .md p { font-size: 15.5px; }
+[data-fontsize="lg"] .md p { font-size: 17px; line-height: 1.8; }
+[data-fontsize="sm"] .doc-editor { font-size: 14px; }
+[data-fontsize="md"] .doc-editor { font-size: 15.5px; }
+[data-fontsize="lg"] .doc-editor { font-size: 17px; }
+
+/* spacing */
+[data-density="cozy"] .doc { padding-bottom: 4px; }
+[data-density="cozy"] .react-row { margin-top: 7px; }
+[data-density="cozy"] .doc-meta { margin-bottom: 10px; }
+[data-density="cozy"] .doctabs { margin-bottom: 14px; }
+[data-density="cozy"] .composer { margin-bottom: 22px; }
+[data-density="cozy"] .prompt { padding: 14px 0; }
+[data-density="cozy"] .section { padding: 16px 0; }
+
+/* prefs popover */
+.prefs-pop { position: fixed; z-index: 160; width: 252px; padding: 10px 12px; }
+.prefs-pop.right { left: auto; right: 0; }
+.pref-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; }
+.pref-label { font-size: 12.5px; color: var(--text-dim); }
+.pref-note { font-size: 11px; color: var(--text-faint); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 7px; }
+
+/* docs grid view */
+.docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.doc-card {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+.doc-card:hover { border-color: var(--border-strong); filter: none; }
+.doc-card.on { border-color: var(--accent); }
+.doc-card .dc-t { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-card .dc-s {
+  font-size: 12px; color: var(--text-faint);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-height: 30px;
+}
+.doc-card .dc-m { font-size: 11.5px; color: var(--text-faint); display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+@media (max-width: 560px) { .docs-grid { grid-template-columns: 1fr; } }
+
 /* ============ presence ============ */
 
 .presence { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 2px; }
