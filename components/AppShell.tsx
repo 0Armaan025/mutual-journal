@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import CommandPalette from "./CommandPalette";
+import Icon from "./Icons";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -31,16 +32,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <header className="topbar">
-          <button className="icon" onClick={() => setDrawer((d) => !d)} aria-label="Menu">
-            ☰
+          <button className="icon" onClick={() => setDrawer((d) => !d)} aria-label="Menu" title="Menu">
+            <Icon name="sort" size={16} />
           </button>
           <a href="/" className="brand" onClick={(e) => { e.preventDefault(); router.push("/"); }}>
             <span className="mark">M</span>
             Mutual <span className="amp">Journal</span>
           </a>
           <div className="grow" />
-          <button className="icon" onClick={() => setPalette(true)} aria-label="Search">
-            ⌕
+          <button className="icon" onClick={() => setPalette(true)} aria-label="Search" title="Search">
+            <Icon name="search" size={16} />
           </button>
         </header>
         <div className={`drawer-backdrop${drawer ? " show" : ""}`} onClick={() => setDrawer(false)} />

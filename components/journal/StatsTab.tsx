@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { dayKey, wordCount, extractTags, timeAgo } from "@/lib/format";
+import { moodDef, moodLabel } from "@/lib/moods";
+import Icon from "@/components/Icons";
 import type { JournalData } from "@/lib/types";
 
 const DAYS = 91;
@@ -175,8 +177,7 @@ export default function StatsTab({ journal }: { journal: JournalData }) {
                   {stats.docRows.map((d) => (
                     <tr key={d.id}>
                       <td>
-                        {d.pinned && <span style={{ color: "var(--accent)", marginRight: 5 }}>★</span>}
-                        {d.title || "Untitled"}
+                        {d.pinned && <Icon name="star" size={12} />} {d.title || "Untitled"}
                       </td>
                       <td className="num" style={{ textAlign: "right" }}>{wordCount(d.content)}</td>
                       <td className="num muted" style={{ textAlign: "right" }}>{timeAgo(d.updatedAt)}</td>
@@ -240,7 +241,12 @@ export default function StatsTab({ journal }: { journal: JournalData }) {
                 <tbody>
                   {stats.moodCounts.map(([m, n]) => (
                     <tr key={m}>
-                      <td>{m}</td>
+                      <td>
+                        <span className="mood-pill">
+                          <Icon name={moodDef(m)?.icon ?? "moodHappy"} size={13} />
+                          {moodLabel(m)}
+                        </span>
+                      </td>
                       <td>
                         <span className="bar" style={{ width: pct(n, stats.moodMax) }} />
                         <span className="num">{n}</span>

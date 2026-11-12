@@ -6,7 +6,9 @@ import { useToast } from "@/components/Toaster";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import JournalContextMenu, { type JournalMenuPos } from "@/components/JournalContextMenu";
 import { useDeleteJournal } from "@/components/useDeleteJournal";
+import Icon from "@/components/Icons";
 import { addJournal, getJournals, getPinned, togglePin } from "@/lib/storage";
+import { moodDef } from "@/lib/moods";
 import { timeAgo, initials } from "@/lib/format";
 import type { FeedItem, JournalRef } from "@/lib/types";
 
@@ -132,23 +134,26 @@ export default function Dashboard() {
               </span>
               <span className="t">{j.title}</span>
               <span className="id">{j.shareId}</span>
-              <span className="row" style={{ marginLeft: "auto", gap: 4 }}>
-                <button
-                  className={`icon${pinned.includes(j.shareId) ? " on" : ""}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setPinned(togglePin(j.shareId));
-                  }}
-                  title={pinned.includes(j.shareId) ? "Unpin" : "Pin to sidebar"}
-                >
-                  {pinned.includes(j.shareId) ? "★" : "☆"}
-                </button>
-              </span>
+                <span className="row" style={{ marginLeft: "auto", gap: 2 }}>
+                  <button
+                    className={`icon${pinned.includes(j.shareId) ? " on" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPinned(togglePin(j.shareId));
+                    }}
+                    title={pinned.includes(j.shareId) ? "Unpin from sidebar" : "Pin to sidebar"}
+                    aria-label={pinned.includes(j.shareId) ? "Unpin journal" : "Pin journal"}
+                  >
+                    <Icon name="star" size={13} />
+                  </button>
+                </span>
             </a>
           ))}
           <button className="jrow new" onClick={create} style={{ background: "transparent" }}>
-            <span className="ico" style={{ background: "var(--surface-2)", color: "var(--text-faint)" }}>＋</span>
+            <span className="ico" style={{ background: "var(--surface-2)", color: "var(--text-faint)" }}>
+              <Icon name="plus" size={12} />
+            </span>
             New journal
           </button>
         </div>
@@ -232,7 +237,11 @@ export default function Dashboard() {
                     <span>edited</span>
                     <span>{item.doc.title || "Untitled"}</span>
                     <span>{timeAgo(item.doc.updatedAt)}</span>
-                    {item.doc.mood && <span>{item.doc.mood}</span>}
+                    {item.doc.mood && moodDef(item.doc.mood) && (
+                      <span className="mood-pill sm">
+                        <Icon name={moodDef(item.doc.mood)!.icon} size={12} />
+                      </span>
+                    )}
                   </div>
                   <div className="snippet">{item.doc.content.replace(/[#*>`|\-]/g, "").slice(0, 140) || "empty document"}</div>
                   <div className="where">{item.journal.title}</div>

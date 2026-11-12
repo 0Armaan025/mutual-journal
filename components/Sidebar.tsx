@@ -8,6 +8,7 @@ import { addJournal, getJournals, getPinned, togglePin, type Accent } from "@/li
 import ConfirmDialog from "./ConfirmDialog";
 import JournalContextMenu, { type JournalMenuPos } from "./JournalContextMenu";
 import { useDeleteJournal } from "./useDeleteJournal";
+import Icon from "./Icons";
 
 const ACCENT_HEX: Record<Accent, string> = {
   amber: "#e8913a",
@@ -84,7 +85,9 @@ export default function Sidebar({
       </a>
 
       <div className="side-search">
-        <span className="ico">⌕</span>
+        <span className="ico">
+          <Icon name="search" size={13} />
+        </span>
         <input
           placeholder="Search everything…"
           value={query}
@@ -99,7 +102,9 @@ export default function Sidebar({
       </div>
 
       <button className="side-action" onClick={quickCreate}>
-        <span className="plus">＋</span>
+        <span className="plus">
+          <Icon name="plus" size={13} />
+        </span>
         New journal
       </button>
 
@@ -142,8 +147,9 @@ export default function Sidebar({
       <div className="side-foot">
         <div className="row">
           <span className="lbl">Theme</span>
-          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-            {theme === "dark" ? "☾ dark" : "☀ light"}
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle theme">
+            <Icon name={theme === "dark" ? "moon" : "sun"} size={13} />
+            <span style={{ marginLeft: 5 }}>{theme === "dark" ? "Dark" : "Light"}</span>
           </button>
         </div>
         <div className="row">
@@ -231,7 +237,7 @@ function JournalNavItem({
         title={isPinned ? "Unpin" : "Pin"}
         aria-label={isPinned ? "Unpin journal" : "Pin journal"}
       >
-        {isPinned ? "★" : "☆"}
+        <Icon name="star" size={12} />
       </button>
     </div>
   );

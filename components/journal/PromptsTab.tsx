@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
 import { initials, timeAgo } from "@/lib/format";
+import Icon from "@/components/Icons";
 import type { JournalData } from "@/lib/types";
 
 export default function PromptsTab({ journal, username }: { journal: JournalData; username: string }) {
@@ -148,8 +149,8 @@ function PromptCard({
           </div>
         </div>
         {prompt.author === username && (
-          <button className="icon" onClick={deletePrompt} title="Delete prompt" style={{ opacity: 0.6 }}>
-            🗑
+          <button className="icon" onClick={deletePrompt} title="Delete prompt" aria-label="Delete prompt" style={{ opacity: 0.6 }}>
+            <Icon name="trash" size={14} />
           </button>
         )}
       </div>

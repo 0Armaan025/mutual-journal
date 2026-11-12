@@ -4,7 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
 import Markdown from "@/components/Markdown";
-import { MOODS, QUICK_REACTIONS, initials, timeAgo, wordCount, findWikilinks, extractTags } from "@/lib/format";
+import { MOOD_DEFS, moodDef } from "@/lib/moods";
+import IconButton from "@/components/IconButton";
+import Icon from "@/components/Icons";
+import { QUICK_REACTIONS, initials, timeAgo, wordCount, findWikilinks, extractTags } from "@/lib/format";
 import { FormatToolbar, SlashMenu, caretCoords, type FormatKey, type SlashAction } from "./EditorTools";
 import { DocOutline, DocHistory } from "./DocPanels";
 import type { Doc, JournalData } from "@/lib/types";
@@ -173,7 +176,7 @@ export default function DocumentsTab({
             onClick={() => onSelect(d.id)}
             title={d.title}
           >
-            {d.pinned && <span style={{ color: "var(--accent)", fontSize: 11 }}>★</span>}
+            {d.pinned && <Icon name="star" size={11} />}
             <span className="dt">{d.title || "Untitled"}</span>
             <span
               className="dx"
@@ -222,8 +225,8 @@ function TemplateMenu({ creating, onCreate }: { creating: boolean; onCreate: (ke
   const [open, setOpen] = useState(false);
   return (
     <span className="pop-wrap">
-      <button className="doctab new" onClick={() => setOpen((o) => !o)} disabled={creating} title="New document">
-        ＋
+      <button className="doctab new" onClick={() => setOpen((o) => !o)} disabled={creating} title="New document" aria-label="New document">
+        <Icon name="plus" size={13} />
       </button>
       {open && (
         <span className="pop tpl-pop">
@@ -237,7 +240,9 @@ function TemplateMenu({ creating, onCreate }: { creating: boolean; onCreate: (ke
                 onCreate(t.key);
               }}
             >
-              <span className="tpl-ico">{t.key === "blank" ? "＋" : t.label.slice(0, 1)}</span>
+              <span className="tpl-ico">
+                <Icon name={t.key === "blank" ? "plus" : t.key === "daily" ? "sun" : t.key === "gratitude" ? "moodLoved" : t.key === "meeting" ? "check" : "doc"} size={13} />
+              </span>
               <span>{t.label}</span>
               <span className="hint">{t.hint}</span>
             </button>
@@ -576,37 +581,23 @@ function DocEditor({
       <div className="doc-top">
         <div className="doc-tools">
           <span className="pop-wrap">
-            <button className="icon" onClick={() => setOpenPop(openPop === "mood" ? null : "mood")} title="Mood">
-              {doc.mood ?? "☺"}
+            <button className="icon-btn" onClick={() => setOpenPop(openPop === "mood" ? null : "mood")} title="Set mood" aria-label="Set mood">
+              {doc.mood ? <Icon name={moodDef(doc.mood)?.icon ?? "moodHappy"} /> : <Icon name="moodCalm" />}
             </button>
             {openPop === "mood" && (
               <span className="pop moods">
-                {MOODS.map((m) => (
-                  <button key={m} onClick={() => { patch({ mood: m }); setOpenPop(null); }}>
-                    {m}
+                {MOOD_DEFS.map((m) => (
+                  <button key={m.value} onClick={() => { patch({ mood: m.value }); setOpenPop(null); }} title={m.label} aria-label={m.label}>
+                    <Icon name={m.icon} size={17} />
                   </button>
                 ))}
               </span>
             )}
           </span>
-          <button className={`icon${doc.pinned ? " on" : ""}`} onClick={togglePin} title={doc.pinned ? "Unstar" : "Star"}>
-            {doc.pinned ? "★" : "☆"}
-          </button>
-          <button
-            className={`icon${view === "history" ? " on" : ""}`}
-            onClick={() => setView(view === "history" ? "doc" : "history")}
-            title={`Version history (${doc.versions.length})`}
-          >
-            ⌚
-          </button>
-          <button className="icon" onClick={copyLink} title="Copy link to document">
-            ⛓
-          </button>
-          {isMine && (
-            <button className="icon" onClick={deleteDoc} title="Delete document">
-              🗑
-            </button>
-          )}
+          <IconButton icon={doc.pinned ? "star" : "star"} label={doc.pinned ? "Unstar document" : "Star document"} active={doc.pinned} onClick={togglePin} />
+          <IconButton icon="clock" label={`Version history (${doc.versions.length})`} active={view === "history"} onClick={() => setView(view === "history" ? "doc" : "history")} />
+          <IconButton icon="link" label="Copy link to document" onClick={copyLink} />
+          {isMine && <IconButton icon="trash" label="Delete document" onClick={deleteDoc} />}
         </div>
         <span className="seg">
           <button className={mode === "write" ? "on" : ""} onClick={() => setMode("write")}>
@@ -634,6 +625,12 @@ function DocEditor({
             <span>
               {doc.updatedBy ? `last edited by ${doc.updatedBy}` : `created by ${doc.createdBy || "someone"}`} · {timeAgo(doc.updatedAt)}
             </span>
+            {doc.mood && moodDef(doc.mood) && (
+              <span className="mood-pill" title={`Mood: ${moodDef(doc.mood)!.label}`}>
+                <Icon name={moodDef(doc.mood)!.icon} size={13} />
+                {moodDef(doc.mood)!.label}
+              </span>
+            )}
             <span className={`save-state ${saving}`}>
               {saving === "saving" ? "saving…" : saving === "saved" ? "saved" : busy ? "…" : ""}
             </span>
@@ -700,8 +697,8 @@ function DocEditor({
               </button>
             ))}
             <span className="pop-wrap react-add">
-              <button className="react add" onClick={() => setShowReactions((s) => !s)} title="React">
-                ☺+
+              <button className="react add" onClick={() => setShowReactions((s) => !s)} title="Add reaction">
+                + React
               </button>
               {showReactions && (
                 <span className="react-menu">
@@ -715,7 +712,8 @@ function DocEditor({
             </span>
             <div className="grow" />
             <button className="reply-btn" onClick={() => setShowReplies((s) => !s)}>
-              {doc.replies.length > 0 ? `${doc.replies.length} ${doc.replies.length === 1 ? "comment" : "comments"}` : "Comment"}
+              <Icon name="comment" size={13} />
+              {doc.replies.length > 0 ? ` ${doc.replies.length} ${doc.replies.length === 1 ? "comment" : "comments"}` : " Comment"}
             </button>
           </div>
 
@@ -730,8 +728,8 @@ function DocEditor({
                     <div className="txt">{r.content}</div>
                   </div>
                   {r.author === username && (
-                    <button className="icon" onClick={() => deleteReply(r.id)} title="Delete comment">
-                      ×
+                    <button className="icon" onClick={() => deleteReply(r.id)} title="Delete comment" aria-label="Delete comment">
+                      <Icon name="close" size={13} />
                     </button>
                   )}
                 </div>

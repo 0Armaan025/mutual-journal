@@ -105,8 +105,35 @@ button.danger-ghost { background: transparent; color: var(--danger); }
 button.danger-ghost:hover:not(:disabled) { background: var(--danger-soft); }
 button.small { padding: 4px 9px; font-size: 13px; }
 button.icon { padding: 3px 5px; background: transparent; color: var(--text-faint); font-size: 14px; line-height: 1; }
-button.icon:hover:not(:disabled) { background: var(--surface-2); color: var(--text-dim); }
+button.icon:hover:not(:disabled) { background: transparent; color: var(--text-dim); }
 button.icon.on { color: var(--accent); }
+
+/* icon buttons — the single system for every icon control */
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: 28px; height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-faint);
+  border-radius: var(--r-sm);
+  border: none;
+}
+.icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text-dim); filter: none; }
+.icon-btn.on { color: var(--accent); background: var(--accent-soft); }
+.icon-btn.ghost { color: var(--text-faint); }
+button.icon.on { color: var(--accent); background: transparent; }
+
+/* mood pill (replaces emoji) */
+.mood-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 1px 9px 1px 7px;
+}
+.mood-pill.sm { padding: 1px 7px 1px 5px; }
 
 input, textarea, select {
   font: inherit;
@@ -230,7 +257,8 @@ textarea:focus, input:focus { outline: none; }
 .accent-dot.sel { border-color: var(--text-dim); }
 .theme-toggle {
   background: transparent; color: var(--text-faint);
-  padding: 3px 6px; font-size: 12px; font-weight: 500;
+  padding: 3px 7px; font-size: 12px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 .theme-toggle:hover { background: var(--surface-2); color: var(--text); filter: none; }
 
@@ -311,7 +339,7 @@ textarea:focus, input:focus { outline: none; }
 
 .section { padding: 22px 0; border-top: 1px solid var(--border); }
 .section:first-of-type { border-top: none; padding-top: 0; }
-.section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 1px 12px; }
 .section-head h2 { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
 .section-head .sub { font-size: 12px; color: var(--text-faint); }
 
@@ -445,9 +473,9 @@ textarea:focus, input:focus { outline: none; }
   border-radius: var(--r); box-shadow: var(--shadow-lg);
   padding: 6px;
 }
-.pop.moods { display: flex; gap: 1px; }
-.pop button { font-size: 17px; padding: 4px 6px; background: transparent; }
-.pop button:hover { background: var(--surface-2); filter: none; }
+.pop.moods { display: flex; gap: 1px; padding: 4px; }
+.pop.moods button { font-size: 17px; padding: 5px 7px; background: transparent; color: var(--text-dim); border-radius: var(--r-sm); }
+.pop.moods button:hover { background: var(--accent-soft); color: var(--accent); filter: none; }
 .pop.tags { width: 190px; }
 .pop.tags input { font-size: 13px; }
 .pop.tags .taglist { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 7px; }
@@ -486,13 +514,15 @@ textarea:focus, input:focus { outline: none; }
   border-radius: 999px;
   background: transparent; color: var(--text-faint);
   cursor: pointer;
+  border: 1px solid transparent;
 }
 .react:hover { color: var(--text-dim); background: var(--surface-2); filter: none; }
 .react.mine { color: var(--accent); font-weight: 500; }
-.react.add { background: transparent; }
+.react.add { background: transparent; border-style: dashed; border-color: var(--border-strong); }
 .reply-btn {
   background: transparent; color: var(--text-faint);
   font-size: 12.5px; padding: 1px 7px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 .reply-btn:hover { color: var(--text); background: var(--surface-2); filter: none; }
 .react-add { display: inline-flex; }

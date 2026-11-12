@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Icon from "./Icons";
 import type { JournalRef } from "@/lib/types";
 
 export type JournalMenuPos = { x: number; y: number; journal: JournalRef };
@@ -43,33 +44,18 @@ export default function JournalContextMenu({
 
   return (
     <div className="ctx-menu" style={style} onMouseDown={(e) => e.stopPropagation()}>
-      <button
-        className="ctx-item"
-        onClick={() => {
-          onOpen();
-          onClose();
-        }}
-      >
-        ↗ Open journal
+      <button className="ctx-item" onClick={() => { onOpen(); onClose(); }}>
+        <Icon name="arrow" size={14} />
+        Open journal
       </button>
-      <button
-        className="ctx-item"
-        onClick={() => {
-          onTogglePin();
-          onClose();
-        }}
-      >
-        {isPinned ? "☆ Unpin from sidebar" : "★ Pin to sidebar"}
+      <button className="ctx-item" onClick={() => { onTogglePin(); onClose(); }}>
+        <Icon name="star" size={14} />
+        {isPinned ? "Unpin from sidebar" : "Pin to sidebar"}
       </button>
       <div className="ctx-sep" />
-      <button
-        className="ctx-item danger"
-        onClick={() => {
-          onDelete();
-          onClose();
-        }}
-      >
-        🗑 Delete journal…
+      <button className="ctx-item danger" onClick={() => { onDelete(); onClose(); }}>
+        <Icon name="trash" size={14} />
+        Delete journal…
       </button>
     </div>
   );
