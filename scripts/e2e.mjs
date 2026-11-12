@@ -220,7 +220,8 @@ try {
   res = await call("GET", "/");
   check("dashboard renders", res.status === 200 && res.text.includes("Your journals"));
   res = await call("GET", "/journal/definitely-not-here");
-  check("unknown journal → not-found page", res.status === 404);
+  // with loading.tsx the shell streams 200 first and notFound() resolves inside the Suspense boundary
+  check("unknown journal → not-found page", res.status === 200 && res.text.includes("doesn't exist"));
 
   const failed = results.filter((r) => !r.ok).length;
   log(`\n${results.length - failed}/${results.length} checks passed`);

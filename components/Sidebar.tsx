@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useTheme, ACCENTS } from "./ThemeProvider";
 import { useToast } from "./Toaster";
 import { addJournal, getJournals, getPinned, togglePin, type Accent } from "@/lib/storage";
+import ConfirmDialog from "./ConfirmDialog";
+import JournalContextMenu, { type JournalMenuPos } from "./JournalContextMenu";
+import { useDeleteJournal } from "./useDeleteJournal";
 
 const ACCENT_HEX: Record<Accent, string> = {
   amber: "#e8913a",
@@ -30,6 +33,9 @@ export default function Sidebar({
   const [journals, setJournals] = useState<{ shareId: string; title: string; color: string }[]>([]);
   const [pinned, setPinned] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [menu, setMenu] = useState<JournalMenuPos | null>(null);
+  const [confirm, setConfirm] = useState<{ shareId: string; title: string } | null>(null);
+  const deleteJournal = useDeleteJournal();
 
   useEffect(() => {
     setJournals(getJournals());
@@ -102,28 +108,36 @@ export default function Sidebar({
         <div className="side-empty">No journals yet — create one, or open an invite link.</div>
       )}
 
-      {pinnedList.length > 0 && <div className="side-label" style={{ paddingTop: 8 }}>Pinned</div>}
-      {pinnedList.map((j) => (
-        <JournalNavItem
-          key={j.shareId}
-          j={j}
-          active={j.shareId === activeShareId}
-          isPinned
-          onPin={() => setPinned(togglePin(j.shareId))}
-          onOpen={() => go(`/journal/${j.shareId}`)}
-        />
-      ))}
+        {pinnedList.length > 0 && <div className="side-label" style={{ paddingTop: 8 }}>Pinned</div>}
+        {pinnedList.map((j) => (
+          <JournalNavItem
+            key={j.shareId}
+            j={j}
+            active={j.shareId === activeShareId}
+            isPinned
+            onPin={() => setPinned(togglePin(j.shareId))}
+            onOpen={() => go(`/journal/${j.shareId}`)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setMenu({ x: e.clientX, y: e.clientY, journal: j });
+            }}
+          />
+        ))}
 
-      {rest.map((j) => (
-        <JournalNavItem
-          key={j.shareId}
-          j={j}
-          active={j.shareId === activeShareId}
-          isPinned={false}
-          onPin={() => setPinned(togglePin(j.shareId))}
-          onOpen={() => go(`/journal/${j.shareId}`)}
-        />
-      ))}
+        {rest.map((j) => (
+          <JournalNavItem
+            key={j.shareId}
+            j={j}
+            active={j.shareId === activeShareId}
+            isPinned={false}
+            onPin={() => setPinned(togglePin(j.shareId))}
+            onOpen={() => go(`/journal/${j.shareId}`)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setMenu({ x: e.clientX, y: e.clientY, journal: j });
+            }}
+          />
+        ))}
 
       <div className="side-foot">
         <div className="row">
@@ -148,6 +162,32 @@ export default function Sidebar({
           </div>
         </div>
       </div>
+
+      {menu && (
+        <JournalContextMenu
+          pos={menu}
+          isPinned={pinned.includes(menu.journal.shareId)}
+          onOpen={() => go(`/journal/${menu.journal.shareId}`)}
+          onTogglePin={() => setPinned(togglePin(menu.journal.shareId))}
+          onDelete={() => setConfirm({ shareId: menu.journal.shareId, title: menu.journal.title })}
+          onClose={() => setMenu(null)}
+        />
+      )}
+
+      {confirm && (
+        <ConfirmDialog
+          title={`Delete "${confirm.title}"?`}
+          message="This erases every document, comment, and prompt in this journal for everyone with the link. This cannot be undone."
+          confirmLabel="Delete forever"
+          onCancel={() => setConfirm(null)}
+          onConfirm={async () => {
+            const target = confirm;
+            setConfirm(null);
+            await deleteJournal(target.shareId, target.title);
+            refresh();
+          }}
+        />
+      )}
     </aside>
   );
 }
@@ -158,15 +198,17 @@ function JournalNavItem({
   isPinned,
   onPin,
   onOpen,
+  onContextMenu,
 }: {
   j: { shareId: string; title: string; color: string };
   active: boolean;
   isPinned: boolean;
   onPin: () => void;
   onOpen: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }) {
   return (
-    <div className="side-item-row">
+    <div className="side-item-row" onContextMenu={onContextMenu}>
       <a
         href={`/journal/${j.shareId}`}
         className={`side-item${active ? " active" : ""}`}

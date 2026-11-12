@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
-import { addJournal, getJournals } from "@/lib/storage";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import JournalContextMenu, { type JournalMenuPos } from "@/components/JournalContextMenu";
+import { useDeleteJournal } from "@/components/useDeleteJournal";
+import { addJournal, getJournals, getPinned, togglePin } from "@/lib/storage";
 import { timeAgo, initials } from "@/lib/format";
 import type { FeedItem, JournalRef } from "@/lib/types";
 
@@ -33,9 +36,14 @@ export default function Dashboard() {
   const [totals, setTotals] = useState<Totals>({ journals: 0, docs: 0, words: 0, activeThisWeek: 0 });
   const [loading, setLoading] = useState(true);
   const [joinInput, setJoinInput] = useState("");
+  const [pinned, setPinned] = useState<string[]>([]);
+  const [menu, setMenu] = useState<JournalMenuPos | null>(null);
+  const [confirm, setConfirm] = useState<{ shareId: string; title: string } | null>(null);
+  const deleteJournal = useDeleteJournal();
 
   useEffect(() => {
     setJournals(getJournals());
+    setPinned(getPinned());
   }, []);
 
   useEffect(() => {
@@ -118,12 +126,25 @@ export default function Dashboard() {
         </div>
         <div className="jlist">
           {journals.map((j) => (
-            <a key={j.shareId} className="jrow" href={`/journal/${j.shareId}`} onClick={(e) => { e.preventDefault(); router.push(`/journal/${j.shareId}`); }}>
+            <a key={j.shareId} className="jrow" href={`/journal/${j.shareId}`} onClick={(e) => { e.preventDefault(); router.push(`/journal/${j.shareId}`); }} onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, journal: j }); }}>
               <span className="ico" style={{ background: ACCENT_HEX[j.color] ?? "var(--accent)" }}>
                 {j.title.slice(0, 1).toUpperCase()}
               </span>
               <span className="t">{j.title}</span>
               <span className="id">{j.shareId}</span>
+              <span className="row" style={{ marginLeft: "auto", gap: 4 }}>
+                <button
+                  className={`icon${pinned.includes(j.shareId) ? " on" : ""}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPinned(togglePin(j.shareId));
+                  }}
+                  title={pinned.includes(j.shareId) ? "Unpin" : "Pin to sidebar"}
+                >
+                  {pinned.includes(j.shareId) ? "★" : "☆"}
+                </button>
+              </span>
             </a>
           ))}
           <button className="jrow new" onClick={create} style={{ background: "transparent" }}>
@@ -131,6 +152,32 @@ export default function Dashboard() {
             New journal
           </button>
         </div>
+
+        {menu && (
+          <JournalContextMenu
+            pos={menu}
+            isPinned={pinned.includes(menu.journal.shareId)}
+            onOpen={() => router.push(`/journal/${menu.journal.shareId}`)}
+            onTogglePin={() => setPinned(togglePin(menu.journal.shareId))}
+            onDelete={() => setConfirm({ shareId: menu.journal.shareId, title: menu.journal.title })}
+            onClose={() => setMenu(null)}
+          />
+        )}
+
+        {confirm && (
+          <ConfirmDialog
+            title={`Delete "${confirm.title}"?`}
+            message="This erases every document, comment, and prompt in this journal for everyone with the link. This cannot be undone."
+            confirmLabel="Delete forever"
+            onCancel={() => setConfirm(null)}
+            onConfirm={async () => {
+              const target = confirm;
+              setConfirm(null);
+              await deleteJournal(target.shareId, target.title);
+              setJournals(getJournals());
+            }}
+          />
+        )}
       </section>
 
       <section className="section">
