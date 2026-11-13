@@ -28,21 +28,39 @@ export function caretCoords(textarea: HTMLTextAreaElement, pos: number) {
 /* ---------- slash menu ---------- */
 export type SlashAction = { key: string; label: string; hint: string; icon: string };
 
-export function SlashMenu({ top, left, onPick, onClose }: { top: number; left: number; onPick: (a: SlashAction) => void; onClose: () => void }) {
+export function SlashMenu({
+  top,
+  left,
+  actions,
+  query,
+  onPick,
+  onClose,
+}: {
+  top: number;
+  left: number;
+  actions: SlashAction[];
+  query: string;
+  onPick: (a: SlashAction) => void;
+  onClose: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [sel, setSel] = useState(0);
+
+  useEffect(() => {
+    setSel(0);
+  }, [query]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSel((s) => Math.min(s + 1, ACTIONS.length - 1));
+        setSel((s) => Math.min(s + 1, actions.length - 1));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSel((s) => Math.max(s - 1, 0));
       } else if (e.key === "Enter") {
         e.preventDefault();
-        onPick(ACTIONS[sel]);
+        if (actions[sel]) onPick(actions[sel]);
       } else if (e.key === "Escape") {
         e.preventDefault();
         onClose();
@@ -50,25 +68,29 @@ export function SlashMenu({ top, left, onPick, onClose }: { top: number; left: n
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [onPick, onClose, sel]);
+  }, [onPick, onClose, sel, actions]);
 
   return (
     <div className="slash-menu" ref={ref} style={{ top, left }}>
-      {ACTIONS.map((a, i) => (
-        <button
-          key={a.key}
-          className={`slash-item${i === sel ? " sel" : ""}`}
-          onMouseEnter={() => setSel(i)}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onPick(a);
-          }}
-        >
-          <span className="si">{a.icon}</span>
-          <span className="sl">{a.label}</span>
-          <span className="sh">{a.hint}</span>
-        </button>
-      ))}
+      {actions.length === 0 ? (
+        <div className="palette-empty">No blocks match “{query}”</div>
+      ) : (
+        actions.map((a, i) => (
+          <button
+            key={a.key}
+            className={`slash-item${i === sel ? " sel" : ""}`}
+            onMouseEnter={() => setSel(i)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onPick(a);
+            }}
+          >
+            <span className="si">{a.icon}</span>
+            <span className="sl">{a.label}</span>
+            <span className="sh">{a.hint}</span>
+          </button>
+        ))
+      )}
     </div>
   );
 }
@@ -89,6 +111,55 @@ const ACTIONS: { key: string; label: string; hint: string; icon: string }[] = [
 ];
 
 export { ACTIONS as SLASH_ACTIONS };
+
+/* ---------- smart enter: continue lists, exit on empty, dashes to dividers ---------- */
+export function smartEnter(content: string, caret: number): { content: string; caret: number } {
+  const before = content.slice(0, caret);
+  const lineStart = before.lastIndexOf("\n") + 1;
+  const currentLine = before.slice(lineStart);
+  const after = content.slice(caret);
+
+  // typed "---" on its own line → real divider
+  if (/^\s*---\s*$/.test(before.slice(lineStart) + "")) {
+    return { content: before + "\n---\n" + after, caret: caret + 5 };
+  }
+
+  // empty list / todo / quote item → remove marker and exit block
+  const emptyItem = currentLine.match(/^(\s*)([-*+]\s\[[ x]\]|[-*+]\s|>\s|\d+\.\s)$/);
+  if (emptyItem) {
+    const cleaned = before.slice(0, lineStart);
+    return { content: cleaned + after, caret: cleaned.length };
+  }
+
+  // continue the same kind of block
+  const todo = currentLine.match(/^(\s*)([-*+]\s)\[[ x]\]\s/);
+  if (todo) return { content: `${before}\n${todo[1]}${todo[2]}[ ] ${after}`, caret: caret + todo[1].length + todo[2].length + 4 };
+
+  const bullet = currentLine.match(/^(\s*)([-*+]\s)/);
+  if (bullet) return { content: `${before}\n${bullet[1]}${bullet[2]}${after}`, caret: caret + bullet[1].length + bullet[2].length };
+
+  const quote = currentLine.match(/^(\s*)(>\s?)/);
+  if (quote && currentLine.replace(/^(\s*)(>\s?)/, "").trim()) {
+    return { content: `${before}\n${quote[1]}> ${after}`, caret: caret + quote[1].length + 2 };
+  }
+
+  const numbered = currentLine.match(/^(\s*)(\d+)(\.\s)/);
+  if (numbered) {
+    const next = Number(numbered[2]) + 1;
+    return { content: `${before}\n${numbered[1]}${next}${numbered[3]}${after}`, caret: caret + numbered[1].length + String(next).length + numbered[3].length };
+  }
+
+  return { content: `${before}\n${after}`, caret: caret + 1 };
+}
+
+/* ---------- filter slash actions by typed text ---------- */
+export function filterSlashActions(query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return ACTIONS;
+  return ACTIONS.filter(
+    (a) => a.label.toLowerCase().includes(q) || a.key.toLowerCase().includes(q) || a.hint.toLowerCase().includes(q)
+  );
+}
 
 /* ---------- format toolbar ---------- */
 export type FormatKey = "bold" | "italic" | "h1" | "h2" | "h3" | "ul" | "check" | "quote" | "code" | "link" | "divider";

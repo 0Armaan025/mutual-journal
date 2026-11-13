@@ -26,6 +26,8 @@ const DocSchema = new Schema(
     mood: { type: String, default: null },
     tags: { type: [String], default: [] },
     pinned: { type: Boolean, default: false },
+    deleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
     reactions: { type: [ReactionSchema], default: [] },
     replies: { type: [ReplySchema], default: [] },
     createdBy: { type: String, default: "" },

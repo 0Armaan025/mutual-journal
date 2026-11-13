@@ -127,7 +127,7 @@ try {
   res = await call("DELETE", `${J(journal)}/docs/${doc2.id}?author=alice`);
   check("only creator can delete doc → 403", res.status === 403);
   res = await call("DELETE", `${J(journal)}/docs/${doc2.id}?author=bob`);
-  check("creator deletes doc", res.status === 200);
+  check("creator delete soft-trashes doc", res.status === 200 && res.json.trashed === true);
 
   // pin
   res = await call("POST", `${J(journal)}/docs/${starter.id}/pin`, j({}));
@@ -153,6 +153,24 @@ try {
   check("only comment author can delete → 403", res.status === 403);
   res = await call("DELETE", `${J(journal)}/docs/${starter.id}/replies?author=bob&replyId=${replyId}`);
   check("comment author deletes comment", res.status === 200 && res.json.replies.length === 0);
+
+  // delete: soft delete to trash by default
+  res = await call("DELETE", `${J(journal)}/docs/${doc2.id}?author=bob`);
+  check("delete moves doc to trash", res.status === 200 && res.json.trashed === true);
+
+  res = await call("GET", J(journal));
+  check("trashed doc leaves the document list", res.json.docs.some((d) => d.id === doc2.id) === false && res.json.trash.some((d) => d.id === doc2.id));
+
+  res = await call("POST", `${J(journal)}/docs/${doc2.id}/trash?author=bob`);
+  check("restore from trash", res.status === 200 && res.json.deleted === false);
+
+  res = await call("GET", J(journal));
+  check("restored doc returns to the list", res.json.docs.some((d) => d.id === doc2.id));
+
+  res = await call("DELETE", `${J(journal)}/docs/${doc2.id}?author=bob&forever=1`);
+  check("permanent delete", res.status === 200);
+  res = await call("GET", J(journal));
+  check("permanently deleted doc is gone", !res.json.docs.some((d) => d.id === doc2.id) && !res.json.trash.some((d) => d.id === doc2.id));
 
   // ---------- prompts ----------
   res = await call("POST", `${J(journal)}/prompts`, j({ author: "bob", question: "One small good thing this week?" }));

@@ -60,6 +60,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 export async function DELETE(request: Request, { params }: Ctx) {
   const { shareId, docId } = await params;
   const author = new URL(request.url).searchParams.get("author") ?? "";
+  const forever = new URL(request.url).searchParams.get("forever") === "1";
 
   if (!author) {
     return NextResponse.json({ error: "Author is required" }, { status: 400 });
@@ -74,9 +75,19 @@ export async function DELETE(request: Request, { params }: Ctx) {
     return NextResponse.json({ error: "Only the document's creator can delete it" }, { status: 403 });
   }
 
-  doc.deleteOne();
+  if (forever) {
+    doc.deleteOne();
+    journal.markModified("docs");
+    await journal.save();
+    return NextResponse.json({ ok: true, id: docId });
+  }
+
+  // default: soft delete to trash
+  doc.deleted = true;
+  doc.deletedAt = new Date();
+  doc.pinned = false;
   journal.markModified("docs");
   await journal.save();
 
-  return NextResponse.json({ ok: true, id: docId });
+  return NextResponse.json({ ok: true, id: docId, trashed: true });
 }

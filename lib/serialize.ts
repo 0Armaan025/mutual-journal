@@ -40,6 +40,7 @@ export function serializeDoc(d: Lean): Doc {
     mood: d.mood ? String(d.mood) : null,
     tags: (d.tags as string[]) ?? [],
     pinned: Boolean(d.pinned),
+    deleted: Boolean(d.deleted),
     reactions,
     replies,
     versions,
@@ -80,7 +81,7 @@ export function serializeJournal(j: Lean): JournalData {
 
   // legacy migration: journals that only have entries get them folded into docs
   const needsMigration = rawDocs.length === 0 && rawEntries.length > 0;
-  const docs: Doc[] = needsMigration
+  const all: Doc[] = needsMigration
     ? rawEntries.map((e, i) => ({
         id: String(e._id),
         title: titleFromContent(String(e.content ?? ""), i + 1),
@@ -104,6 +105,7 @@ export function serializeJournal(j: Lean): JournalData {
         createdAt: iso(e.createdAt),
         updatedAt: iso(e.createdAt),
         versions: [],
+        deleted: false,
       }))
     : rawDocs.map(serializeDoc);
 
@@ -112,7 +114,8 @@ export function serializeJournal(j: Lean): JournalData {
     title: String(j.title),
     color: String(j.color ?? "amber"),
     createdAt: iso(j.createdAt),
-    docs,
+    docs: all.filter((d) => !d.deleted),
+    trash: all.filter((d) => d.deleted),
     prompts: ((j.prompts as Lean[]) ?? []).map(serializePrompt),
     presence: ((j.presence as Lean[]) ?? []).map((p) => ({ name: String(p.name), at: iso(p.at) })),
     migrated: needsMigration,

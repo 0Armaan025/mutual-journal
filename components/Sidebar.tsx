@@ -10,6 +10,7 @@ import JournalContextMenu, { type JournalMenuPos } from "./JournalContextMenu";
 import { useDeleteJournal } from "./useDeleteJournal";
 import Icon from "./Icons";
 import LayoutPanel from "./LayoutPanel";
+import ShortcutsModal from "./ShortcutsModal";
 
 const ACCENT_HEX: Record<Accent, string> = {
   amber: "#e8913a",
@@ -37,6 +38,7 @@ export default function Sidebar({
   const [query, setQuery] = useState("");
   const [menu, setMenu] = useState<JournalMenuPos | null>(null);
   const [confirm, setConfirm] = useState<{ shareId: string; title: string } | null>(null);
+  const [help, setHelp] = useState(false);
   const deleteJournal = useDeleteJournal();
 
   useEffect(() => {
@@ -170,9 +172,16 @@ export default function Sidebar({
         </div>
         <div className="row">
           <span className="lbl">Layout</span>
-          <LayoutPanel trigger="gear" />
+          <span className="row" style={{ gap: 2 }}>
+            <button className="icon-btn" onClick={() => setHelp(true)} title="Keyboard shortcuts" aria-label="Keyboard shortcuts">
+              <Icon name="comment" size={14} />
+            </button>
+            <LayoutPanel trigger="gear" />
+          </span>
         </div>
       </div>
+
+      {help && <ShortcutsModal onClose={() => setHelp(false)} />}
 
       {menu && (
         <JournalContextMenu

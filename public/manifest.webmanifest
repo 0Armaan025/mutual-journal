@@ -1,0 +1,16 @@
+{
+  "name": "Mutual Journal",
+  "short_name": "Mutual",
+  "description": "A shared journal for you and yours. Markdown, together, over one link.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#b45309",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}

@@ -7,18 +7,45 @@ import { removeJournal } from "@/lib/storage";
 import { timeAgo } from "@/lib/format";
 import type { JournalData } from "@/lib/types";
 
-export default function SettingsTab({ journal }: { journal: JournalData }) {
+export default function SettingsTab({ journal, username }: { journal: JournalData; username: string }) {
   const router = useRouter();
   const toast = useToast();
   const [title, setTitle] = useState(journal.title);
   const [savingTitle, setSavingTitle] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState("");
+  const [busyTrash, setBusyTrash] = useState<string | null>(null);
 
   const authors = [
     ...new Set(journal.docs.flatMap((d) => [d.createdBy, d.updatedBy]).filter((a): a is string => Boolean(a))),
   ];
+  const trash = journal.trash;
   const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/journal/${journal.shareId}` : `/journal/${journal.shareId}`;
   const safeName = journal.title.replace(/[^\w\- ]/g, "") || "journal";
+
+  async function restore(docId: string) {
+    setBusyTrash(docId);
+    const res = await fetch(`/api/journals/${journal.shareId}/docs/${docId}/trash?author=${encodeURIComponent(username)}`, { method: "POST" });
+    if (!res.ok) {
+      toast("Could not restore", true);
+    } else {
+      toast("Restored to documents");
+      router.refresh();
+    }
+    setBusyTrash(null);
+  }
+
+  async function deleteForever(docId: string) {
+    if (!window.confirm("Delete this document forever? This cannot be undone.")) return;
+    setBusyTrash(docId);
+    const res = await fetch(`/api/journals/${journal.shareId}/docs/${docId}?author=${encodeURIComponent(username)}&forever=1`, { method: "DELETE" });
+    if (!res.ok) {
+      toast("Could not delete", true);
+    } else {
+      toast("Deleted forever");
+      router.refresh();
+    }
+    setBusyTrash(null);
+  }
 
   async function rename() {
     if (!title.trim() || savingTitle) return;
@@ -115,6 +142,35 @@ export default function SettingsTab({ journal }: { journal: JournalData }) {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <h2>Trash</h2>
+          <span className="sub">{trash.length} recoverable</span>
+        </div>
+        {trash.length === 0 ? (
+          <div className="muted">Deleted documents rest here. Restore them or remove them forever.</div>
+        ) : (
+          <div className="trash-list">
+            {trash.map((d) => (
+              <div className="trash-item" key={d.id}>
+                <div className="info">
+                  <div className="t">{d.title || "Untitled"}</div>
+                  <div className="d">deleted by {d.updatedBy || d.createdBy || "someone"} · restored or gone forever from here</div>
+                </div>
+                <div className="row" style={{ gap: 6 }}>
+                  <button className="ghost small" onClick={() => restore(d.id)} disabled={busyTrash === d.id}>
+                    {busyTrash === d.id ? "…" : "Restore"}
+                  </button>
+                  <button className="danger-ghost small" onClick={() => deleteForever(d.id)} disabled={busyTrash === d.id}>
+                    Delete forever
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="section">

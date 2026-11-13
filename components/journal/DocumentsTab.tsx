@@ -7,9 +7,10 @@ import Markdown from "@/components/Markdown";
 import { MOOD_DEFS, moodDef } from "@/lib/moods";
 import IconButton from "@/components/IconButton";
 import Icon from "@/components/Icons";
+import OnboardingCard from "@/components/OnboardingCard";
 import { loadPrefs } from "@/lib/prefs";
 import { QUICK_REACTIONS, initials, timeAgo, wordCount, findWikilinks, extractTags } from "@/lib/format";
-import { FormatToolbar, SlashMenu, caretCoords, type FormatKey, type SlashAction } from "./EditorTools";
+import { FormatToolbar, SlashMenu, caretCoords, smartEnter, filterSlashActions, type FormatKey, type SlashAction } from "./EditorTools";
 import { DocOutline, DocHistory } from "./DocPanels";
 import type { Doc, JournalData } from "@/lib/types";
 
@@ -196,7 +197,7 @@ export default function DocumentsTab({
                 title="Delete document"
                 onClick={async (e) => {
                   e.stopPropagation();
-                  if (!window.confirm(`Delete "${d.title || "Untitled"}"? This can't be undone.`)) return;
+                  if (!window.confirm(`Moved to trash "${d.title || "Untitled"}"? You can restore it anytime from Settings.`)) return;
                   if (d.createdBy && d.createdBy !== username) {
                     toast("Only the creator can delete this document", true);
                     return;
@@ -243,6 +244,10 @@ export default function DocumentsTab({
             <span style={{ fontSize: 12.5 }}>New document</span>
           </button>
         </div>
+      )}
+
+      {doc && journal.docs.length === 1 && !doc.content.trim() && !journal.migrated && (
+        <OnboardingCard shareId={journal.shareId} />
       )}
 
       {doc ? (
@@ -315,6 +320,7 @@ function DocEditor({
   const [replyText, setReplyText] = useState("");
   const [openPop, setOpenPop] = useState<"mood" | null>(null);
   const [slash, setSlash] = useState<{ top: number; left: number } | null>(null);
+  const [slashQuery, setSlashQuery] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dirty = useRef(false);
@@ -328,6 +334,7 @@ function DocEditor({
     dirty.current = false;
     setSaving("idle");
     setSlash(null);
+    setSlashQuery("");
     setView("doc");
   }, [docKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -440,8 +447,21 @@ function DocEditor({
   const slashAnchor = useRef(0);
 
   function onEditorKeyDown(ev: React.KeyboardEvent<HTMLTextAreaElement>) {
+    const el = ev.currentTarget;
     if (ev.key === "Escape" && slash) {
       setSlash(null);
+      setSlashQuery("");
+      return;
+    }
+    // keyboard formatting: ⌘B / ⌘I
+    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "b") {
+      ev.preventDefault();
+      applyFormat("bold");
+      return;
+    }
+    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "i") {
+      ev.preventDefault();
+      applyFormat("italic");
       return;
     }
     if (ev.key === "Tab") {
@@ -449,22 +469,47 @@ function DocEditor({
       applyFormat("ul");
       return;
     }
+    // smart enter: continue lists, exit empty items
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      const s = el.selectionStart;
+      const result = smartEnter(content, s);
+      if (result.content !== content) {
+        ev.preventDefault();
+        setContent(result.content);
+        edit("content", result.content);
+        requestAnimationFrame(() => {
+          el.setSelectionRange(result.caret, result.caret);
+          el.focus();
+        });
+      }
+      return;
+    }
   }
 
   function onEditorChange(value: string) {
+    const el = textareaRef.current;
     setContent(value);
     edit("content", value);
-    // slash detection runs after insertion (input event)
-    const el = textareaRef.current;
     if (!el) return;
     const pos = el.selectionStart;
+
+    if (slash) {
+      // update slash filter from text typed after the slash
+      const typed = value.slice(slashAnchor.current, pos);
+      if (typed.startsWith("/")) setSlashQuery(typed.slice(1));
+      else if (value[pos - 1] !== "/") {
+        setSlash(null);
+        setSlashQuery("");
+      }
+      return;
+    }
+
     const typedSlash = value[pos - 1] === "/" && (pos === 1 || value[pos - 2] === "\n" || value[pos - 2] === " ");
     if (typedSlash) {
       const { top, left } = caretCoords(el, pos);
       slashAnchor.current = pos - 1;
+      setSlashQuery("");
       setSlash({ top: top + 24, left: Math.min(left, 480) });
-    } else if (slash && value[pos - 1] !== "/") {
-      setSlash(null);
     }
   }
 
@@ -496,6 +541,7 @@ function DocEditor({
     const next = `${before}${insert}${after}`;
     setContent(next);
     setSlash(null);
+    setSlashQuery("");
     dirty.current = true;
     setSaving("saving");
     if (timer.current) clearTimeout(timer.current);
@@ -534,7 +580,7 @@ function DocEditor({
   }
 
   async function deleteDoc() {
-    if (!window.confirm(`Delete "${doc.title || "Untitled"}"? This can't be undone.`)) return;
+    if (!window.confirm(`Moved to trash "${doc.title || "Untitled"}"? You can restore it anytime from Settings.`)) return;
     const res = await fetch(
       `/api/journals/${journal.shareId}/docs/${doc.id}?author=${encodeURIComponent(username)}`,
       { method: "DELETE" }
@@ -687,8 +733,13 @@ function DocEditor({
                 <SlashMenu
                   top={slash.top}
                   left={slash.left}
+                  actions={filterSlashActions(slashQuery)}
+                  query={slashQuery}
                   onPick={runSlashAction}
-                  onClose={() => setSlash(null)}
+                  onClose={() => {
+                    setSlash(null);
+                    setSlashQuery("");
+                  }}
                 />
               )}
             </div>

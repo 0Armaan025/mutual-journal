@@ -27,6 +27,7 @@ export type Doc = {
   mood: string | null;
   tags: string[];
   pinned: boolean;
+  deleted: boolean;
   reactions: Reaction[];
   replies: Reply[];
   versions: Version[];
@@ -56,6 +57,7 @@ export type JournalData = {
   color: string;
   createdAt: string;
   docs: Doc[];
+  trash: Doc[];
   prompts: Prompt[];
   presence: { name: string; at: string }[];
   migrated?: boolean;

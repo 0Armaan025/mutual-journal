@@ -551,6 +551,63 @@ textarea:focus, input:focus { outline: none; }
 .empty-state { text-align: center; color: var(--text-faint); padding: 40px 20px; font-size: 13.5px; }
 .empty-state .big { font-size: 14.5px; color: var(--text-dim); font-weight: 600; margin-bottom: 3px; }
 
+/* ============ onboarding ============ */
+
+.onboard {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: 18px 20px;
+  margin-bottom: 22px;
+}
+.onboard h3 { font-size: 14.5px; font-weight: 650; margin-bottom: 10px; }
+.onboard ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.onboard li { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--text-dim); line-height: 1.5; }
+.onboard li b { color: var(--text); font-weight: 600; }
+.onboard .n {
+  width: 18px; height: 18px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+  font-size: 11px; font-weight: 650;
+  margin-top: 1px;
+}
+.onboard-x { position: absolute; top: 10px; right: 10px; }
+.linklike { background: none; border: none; padding: 0; color: var(--accent); font: inherit; font-weight: 550; cursor: pointer; text-decoration: underline; text-decoration-color: var(--accent-line); }
+.linklike:hover { filter: none; text-decoration-color: var(--accent); }
+
+/* ============ trash ============ */
+
+.trash-list { display: flex; flex-direction: column; }
+.trash-item { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.trash-item:last-child { border-bottom: none; }
+.trash-item .info { flex: 1; min-width: 0; }
+.trash-item .info .t { font-weight: 550; font-size: 13.5px; }
+.trash-item .info .d { font-size: 12px; color: var(--text-faint); margin-top: 1px; }
+
+/* ============ shortcuts modal ============ */
+
+.modal.wide { width: min(440px, 100%); }
+.shortcut-list { display: flex; flex-direction: column; }
+.shortcut-row { display: flex; align-items: center; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.shortcut-row:last-child { border-bottom: none; }
+.shortcut-row .keys { display: flex; gap: 3px; flex-shrink: 0; min-width: 76px; }
+.sc-label { color: var(--text-dim); }
+
+/* ============ print ============ */
+
+@media print {
+  .sidebar, .topbar, .doctabs, .doc-top, .fmt-bar, .react-row, .filters, .tabs, .props, .toasts, .replies, .onboard, .ctx-menu, .modal-backdrop, .sidebar-expand { display: none !important; }
+  body { background: #fff; color: #000; }
+  .page { max-width: 100%; padding: 0; }
+  .doc-title { font-size: 26px; }
+  .md p { font-size: 12.5px; }
+  .entry, .prompt, .section { border: none; padding: 8px 0; }
+  a { color: #000; text-decoration: underline; }
+}
+
 /* ============ context menu + modal ============ */
 
 .ctx-menu {

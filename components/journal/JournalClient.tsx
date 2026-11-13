@@ -179,7 +179,7 @@ export default function JournalClient({ journal }: { journal: JournalData }) {
       {tab === "docs" && <DocumentsTab journal={journal} username={username} selectedId={selectedDoc} onSelect={setSelectedDoc} />}
       {tab === "prompts" && <PromptsTab journal={journal} username={username} />}
       {tab === "stats" && <StatsTab journal={journal} />}
-      {tab === "settings" && <SettingsTab journal={journal} />}
+      {tab === "settings" && <SettingsTab journal={journal} username={username} />}
     </div>
   );
 }
